@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link href="https://kendo.cdn.telerik.com/2020.2.617/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="https://kendo.cdn.telerik.com/2020.2.617/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="https://kendo.cdn.telerik.com/2020.2.617/styles/kendo.material.mobile.min.css" rel="stylesheet" />
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src="https://kendo.cdn.telerik.com/2020.2.617/js/kendo.all.min.js"></script>
+
+    <script src="_layouts/15/clienttemplates.js"></script>  
+    <script src="_layouts/15/clientforms.js"></script>  
+    <script src="_layouts/15/clientpeoplepicker.js"></script>  
+    <script src="_layouts/15/autofill.js"></script> 
+
+    <style>
+        #s4-titlerow, #pageContentTitle, #titlerow {
+            display: none !important;
+        }
+
+        .contentwrapper {
+            margin: 0 !important;
+        }
+
+        .ms-pub-contentLayout {
+            padding: 0 !important;
+            margin-top: 0 !important;
+        }
+
+        .article-content {
+            margin: 0 !important;
+        }
+
+        .ms-core-listMenu-horizontalBox {
+            display: none !important;
+        }
+
+        div.article {
+            padding: 0px;
+        }
+
+        html, body {
+            height: 100% !important;
+            min-height: 100%;
+        }
+
+        .fill {
+            min-height: 100%;
+            height: 80vh;
+        }
+
+        .nav-item {
+            line-height: 500%;
+        }
+
+        h1 {
+            line-height: 200%
+        }
+
+        .nav-area {
+            background-color: #35373d;
+        }
+
+        .nav-area > ul > li {
+            color: #b8bbc2;
+            border-bottom: 1px solid #4a4b51;
+        }
+
+        .nav-area > ul > li:hover {
+            background-color: #212329;
+        }
+
+        .active {
+            background-color: #0d1016;
+        }
+
+        .k-edit-form-container {
+            width: 600px;
+        }
+
+        .k-edit-label {
+            width: 30%;
+            margin: 0;
+        }
+
+        .k-input, .k-combobox, .k-dropdown, .k-numerictextbox, .k-textbox {
+            width: 85% !important
+        }
+
+        .k-grid .k-grid-header .k-header .k-link { height: auto; }
+
+        .k-grid .k-grid-header .k-header { white-space: normal; }
+
+        .k-grid .k-header .k-grid-search { max-width: 20% !important }
+
+        .k-toolbar>* {
+            min-width: 10vw;
+        }
+    </style>
+</head>
+<body>
+    <div id="message"></div>
+    <div id="grid"></div>
+
+    <script>
+        // Render and initialize the client-side People Picker.
+        function initializePeoplePicker(peoplePickerElementId) {
+            
+            // Create a schema to store picker properties, and set the properties.
+            var schema = {};
+            schema['PrincipalAccountType'] = 'User,DL,SecGroup,SPGroup';
+            schema['SearchPrincipalSource'] = 15;
+            schema['ResolvePrincipalSource'] = 15;
+            schema['AllowMultipleValues'] = false;
+            schema['MaximumEntitySuggestions'] = 50;
+            schema['Width'] = '280px';
+        
+            // Render and initialize the picker. 
+            // Pass the ID of the DOM element that contains the picker, an array of initial
+            // PickerEntity objects to set the picker value, and a schema that defines
+            // picker properties.
+            this.SPClientPeoplePicker_InitStandaloneControlWrapper(peoplePickerElementId, null, schema);
+        }
+        
+        (function (vaApp, $, undefined) {
+            $.model = new kendo.observable({
+                // set the default digest value - required for post operations
+                digest: $('#__REQUESTDIGEST').val(),
+
+                // relative url
+                _siteUrl: _spPageContextInfo.webServerRelativeUrl,
+
+                // EPS Codes List
+                _spEPSCodesItem: "/_api/web/lists/getByTitle('EPS Codes')/items",
+                _spEPSCodesItemArgs: '?$select=Title,EPS_x0020_Project_x0020_Name&$top=5000',
+                epsCodesListUrl: () => {
+                    return $.model._siteUrl + $.model._spEPSCodesItem + $.model._spEPSCodesItemArgs;
+                },
+
+                // Status List
+                _spStatusItem: "/_api/web/lists/getByTitle('Status')/items",
+                _spStatusItemArgs: '?$select=Title',
+                statusListUrl: () => {
+                    return $.model._siteUrl + $.model._spStatusItem + $.model._spStatusItemArgs;
+                },
+
+                // CiF Submissions
+                _spCifSubmissionItem: "/_api/web/lists/getByTitle('CiF Submission')/items",
+                _spCifSubmissionItemArgs: '?$select=Id,EPSNumber&$top=5000&$orderby=Id desc',
+                cifSubmissionUrl: () => {
+                    return $.model._siteUrl + $.model._spCifSubmissionItem + $.model._spCifSubmissionItemArgs;
+                },
+
+                // Communication Tracking List
+                _spCommTrackerItem: "/_api/web/lists/getByTitle('Communications Tracking')/items",
+                _spCommTrackerItemArgs: '?$select=Id,Title,PM,Who_x0020_made_x0020_contact,Submission_x0020_ID,Date_x0020_back_x0020_to_x0020_P,Redaction_x0020_Start_x0020_Date,Date_x0020_Posted_x0020_to_x0020,Notes,Status,Redacted_x0020_By,Date_x0020_CiF_x0020_Received,Lines_x0020_of_x0020_code_x0020_,Returned_x0020_from_x0020_projec,Field1&$top=5000&$orderby=Modified desc',  //,Project_x0020_Manager/Title&$expand=Project_x0020_Manager
+                commTrackerListUrl: () => {
+                    return $.model._siteUrl + $.model._spCommTrackerItem;
+                }
+            });
+
+            $.init = () => {
+                $.dsEpsCodes = new kendo.data.DataSource({
+                    transport: {
+                        read: (options) => {
+                            Lib.readData((response) => {
+                                options.success(response);
+                            }, $.model.epsCodesListUrl());
+                        }
+                    },
+                    error: (e) => {
+                        console.log(e);
+                    }
+                });
+
+                $.dsStatus = new kendo.data.DataSource({
+                    transport: {
+                        read: (options) => {
+                            Lib.readData((response) => {
+                                options.success(response);
+                            }, $.model.statusListUrl());
+                        }
+                    },
+                    error: (e) => {
+                        console.log(e);
+                    }
+                });
+
+                $.dsCifSubmission = new kendo.data.DataSource({
+                    transport: {
+                        read: (options) => {
+                            Lib.readData((response) => {
+                                options.success(response);
+                            }, $.model.cifSubmissionUrl());
+                        }
+                    },
+                    error: (e) => {
+                        console.log(e);
+                    }
+                });
+
+                $.dsCommTracker = new kendo.data.DataSource({
+                    transport: {
+                        create: (options) => {
+                            Lib.createData((response) => {
+                                options.success(response);
+                            }, options, $.model.commTrackerListUrl());
+                        },
+                        read: (options) => {
+                            Lib.readData((response) => {
+                                options.success(response);
+                            }, $.model.commTrackerListUrl() + $.model._spCommTrackerItemArgs);
+                        },
+                        update: (options) => {
+                            console.log(options);
+                            Lib.updateData(options, $.model.commTrackerListUrl());
+                        },
+                        destroy: (options) => {
+                            Lib.deleteData(options, $.model.commTrackerListUrl());
+                        }
+                    },
+                    pageSize: 10,
+                    schema: {
+                        model: {
+                            id: 'Id',
+                            fields: {
+                                Title: { type: 'string', nullable: false, validation: { required: true } },
+                                PM: { type: 'string' },
+                                Who_x0020_made_x0020_contact: { type: 'string' },
+                                Submission_x0020_ID: { type: 'string'},
+                                Date_x0020_back_x0020_to_x0020_P: { type: 'date', defaultValue: null },
+                                Redaction_x0020_Start_x0020_Date: { type: 'date', defaultValue: null },
+                                Date_x0020_Posted_x0020_to_x0020: { type: 'date', defaultValue: null },
+                                Notes: { type: 'string' },
+                                Status: { type: 'string' },
+                                Redacted_x0020_By: { type: 'string' },
+                                Date_x0020_CiF_x0020_Received: { type: 'date', defaultValue: null },
+                                Lines_x0020_of_x0020_code_x0020_: { type: 'number', defaultValue: null },
+                                Returned_x0020_from_x0020_projec: { type: 'date', defaultValue: null },
+                                Field1: { type: 'object', defaultValue: { Description: '', Url: '' } }
+                            }
+                        }
+                    },
+                    error: (e) => {
+                        console.log(e);
+                    }
+                });
+            }
+
+            $.render = () => {
+                // timeout alert set for 15 min
+                setTimeout(() => {
+                    Utils.showMessage('SharePoint Session Timeout','Your session has timed out. Any attempt to update information will result in an error. Please reload your web page to continue working.');
+                }, 900000);
+
+                $('#grid').kendoGrid({
+                    dataSource: $.dsCommTracker,
+
+                    // options
+                    columnMenu:  true,
+                    editable: 'popup',
+                    filterable: false,
+                    pageable: { pageSizes: true },
+                    reorderable: true,
+                    resizable: true,
+                    scrollable: { virtual: 'columns' },
+                    sortable: true,
+                    toolbar: [ 'create', { name: 'export', text: 'Download Data', iconClass: 'k-icon k-i-download' }, 'search' ],
+
+                    columns: [
+                        { command: ['edit', 'destroy'], width: 225 },
+                        { field: 'Title', title: 'Project Name', editor: Editors.projectName, width: 300 },
+                        { field: 'PM', title: 'Project Manager', editor: Editors.pmPeoplePicker, width: 175 },
+                        { field: 'Status', editor: Editors.commStatus, width: 200 },
+                        { field: 'Who_x0020_made_x0020_contact', title: 'First Contact', editor: Editors.firstContact, width: 125 },
+                        { title: 'Redaction Information',
+                            columns: [
+                                { field: 'Submission_x0020_ID', title: 'Submission ID', editor: Editors.submissionId, width: 150 },
+                                { field: 'Redacted_x0020_By', title: 'Redacted By', editor: Editors.rbPeoplePicker, width: 175 },
+                                { field: 'Date_x0020_CiF_x0020_Received', title: 'Date Received', template: '#= (Date_x0020_CiF_x0020_Received != null) ? kendo.toString(kendo.parseDate(Date_x0020_CiF_x0020_Received), "MMM d, yyyy") : "" #', width: 200 },
+                                { field: 'Redaction_x0020_Start_x0020_Date', title: 'Redaction Date', template: '#= (Redaction_x0020_Start_x0020_Date != null) ? kendo.toString(kendo.parseDate(Redaction_x0020_Start_x0020_Date), "MMM d, yyyy") : "" #', width: 200 },
+                                { field: 'Date_x0020_back_x0020_to_x0020_P', title: 'PM Submission Date', template: '#= (Redaction_x0020_Start_x0020_Date != null) ? kendo.toString(kendo.parseDate(Redaction_x0020_Start_x0020_Date), "MMM d, yyyy") : "" #', width: 200 },
+                                { field: 'Returned_x0020_from_x0020_projec', title: 'PM Approval Date', template: '#= (Returned_x0020_from_x0020_projec != null) ? kendo.toString(kendo.parseDate(Returned_x0020_from_x0020_projec), "MMM d, yyyy") : "" #', width: 200 },
+                                { field: 'Date_x0020_Posted_x0020_to_x0020', title: 'Date Posted', template: '#= (Date_x0020_Posted_x0020_to_x0020 != null) ? kendo.toString(kendo.parseDate(Date_x0020_Posted_x0020_to_x0020), "MMM d, yyyy") : "" #', width: 200 }
+                            ]
+                        },
+                        { title: 'Other Information', 
+                            columns: [
+                                { field: 'Lines_x0020_of_x0020_code_x0020_', title: 'Lines of Code', format: '{0:n0}', width: 200 },
+                                { field: 'Field1', title: 'Publication Link', template: '#= (Field1 != null) ? Field1.Url : "" #', editor: Editors.pubLink, width: 350 },
+                                { field: 'Notes', editor: Editors.notesEditor, width: 350 }
+                            ]
+                        }
+                    ],
+
+                    save: (e) => {
+                        if ($('#pmPickerDiv')[0].innerText != 'Enter a name or email address...') e.model.PM = $('#pmPickerDiv')[0].innerText.slice(0,-1);
+                        if ($('#rbPickerDiv')[0].innerText != 'Enter a name or email address...') e.model.Redacted_x0020_By = $('#rbPickerDiv')[0].innerText.slice(0,-1);
+                        if (e.model.Field1 != null) {
+                            let temp = new Object()
+                            temp.Description = e.model.Title;
+                            temp.Url = e.model.Field1;
+                            e.model.Field1 = temp;
+                        }
+                        e.model.dirty = true;   // set flag to dirty in order to save updates
+                    }
+                });
+
+            }
+
+            // Kendo field editors
+            Editors = {
+                projectName (container, options) {
+                    $('<input required name="' + options.field + '"/>')
+                    .appendTo(container)
+                    .kendoMultiColumnComboBox({
+                        dataSource: $.dsEpsCodes,
+                        autoBind: true,
+                        valuePrimitive: true,
+                        dataTextField: "EPS_x0020_Project_x0020_Name",
+                        dataValueField: "EPS_x0020_Project_x0020_Name",
+                        columns: [
+                            { field: 'EPS_x0020_Project_x0020_Name', title: 'Project Name', width: 500 }
+                        ],
+                        footerTemplate: 'Total #: instance.dataSource.total() # items found',
+                        filter: 'contains',
+                        filterFields: ['EPS_x0020_Project_x0020_Name']
+                    });
+                },
+                submissionId (container, options) {
+                    $('<input name="' + options.field + '"/>')
+                    .appendTo(container)
+                    .kendoMultiColumnComboBox({
+                        dataSource: $.dsCifSubmission,
+                        autoBind: true,
+                        dataTextField: "Id",
+                        dataValueField: "Id",
+                        valuePrimitive: true,
+                        columns: [
+                            { field: 'Id', width: 75 },
+                            { field: 'EPSNumber', title: 'Project Name', width: 500 }
+                        ],
+                        footerTemplate: 'Total #: instance.dataSource.total() # items found',
+                        filter: 'contains',
+                        filterFields: ['EPSNumber']
+                    });
+                },
+                pmPeoplePicker (container, options) {
+                    $('<input name="' + options.field + '" readonly class="k-textbox" /><div id="pmPickerDiv"></div>').appendTo(container);
+                    initializePeoplePicker('pmPickerDiv');
+                },
+                rbPeoplePicker (container, options) {
+                    $('<input name="' + options.field + '" readonly class="k-textbox" /><div id="rbPickerDiv"></div>').appendTo(container);
+                    initializePeoplePicker('rbPickerDiv');
+                },
+                commStatus (container, options) {
+                    $('<input required name="' + options.field + '"/>')
+                    .appendTo(container)
+                    .kendoDropDownList({
+                        dataSource: $.dsStatus,
+                        optionLabel: "Select a status...",
+                        valuePrimitive: true,
+                        autoBind: true,
+                        dataTextField: "Title",
+                        dataValueField: "Title"
+                    });
+                },
+                pubLink (container, options) {
+                    if (options.model.Field1 != null) options.model.Field1 = options.model.Field1.Url;
+                    $('<input name="' + options.field + '" class="k-textbox" />').appendTo(container);
+                },
+                notesEditor (container, options) {
+                    $('<textarea name="' + options.field + '" style="height: 175px;"/>')
+                    .appendTo(container)
+                    .kendoEditor({
+                        tools: [],
+                        resizable: true
+                    });
+                    $('.k-editor-toolbar').hide();
+                },
+                firstContact (container, options) {
+                    $('<input required name="' + options.field + '"/>')
+                    .appendTo(container)
+                    .kendoDropDownList({
+                        dataSource: [
+                            { Title: 'CiF Team' },
+                            { Title: 'Project' }
+                        ],
+                        optionLabel: "Select contact type...",
+                        dataTextField: "Title",
+                        dataValueField: "Title",
+                        valuePrimitive: true
+                    });
+                },
+            }
+
+            // internal Ajax CRUD functions
+            Lib = {
+                readData: function (callback,url) {
+                    $.ajax({
+                        url: url,
+                        dataType: 'json',
+                        type: 'GET',
+                        async: true,
+                        headers: {
+                            'Accept': 'application/json;odata=nometadata',
+                            'Content-Type': 'application/json;odata=nometadata'
+                        },
+                        success: function (data) {
+                            callback(data.value);
+                        },
+                        error: function (xhr) {
+                            callback(xhr);
+                        }
+                    })
+                },
+                createData: function (callback, args, url) {
+                    Utils.getDigest();
+                    delete args.data['Id'];
+                    $.ajax({
+                        url: url,
+                        method: 'POST',
+                        data: JSON.stringify(Utils.cleanseModel(args.data)),
+                        headers: {
+                            'Accept': 'application/json;odata=nometadata',
+                            'Content-Type': 'application/json;odata=nometadata',
+                            'X-RequestDigest': vaApp.model.digest,
+                            'X-HTTP-Method': 'POST'
+                        },
+                        success: function (data, status, xhr) {
+                            callback(data);
+                        },
+                        error: function (xhr, status, error) {
+                            console.log(xhr, status, error);
+                            args.error({});
+                        }
+                    });
+                },
+                updateData: function (args, url) {
+                    Utils.getDigest();
+                    $.ajax({
+                        url: url + '(' + args.data.Id + ')',
+                        method: 'PATCH',
+                        data: JSON.stringify(Utils.cleanseModel(args.data)),
+                        headers: {
+                            'Accept': 'application/json;odata=nometadata',
+                            'Content-Type': 'application/json;odata=nometadata',
+                            'X-RequestDigest': vaApp.model.digest,
+                            'IF-MATCH': '*',
+                            'X-HTTP-Method': 'PATCH'
+                        },
+                        success: function (data, status, xhr) {
+                            args.success({});
+                        },
+                        error: function (xhr, status, error) {
+                            console.log(xhr, status, error);
+                            args.error({});
+                        }
+                    });
+                },
+                deleteData: function (args, url) {
+                    Utils.getDigest();
+                    $.ajax({  
+                        url: url + '(' + args.data.Id + ')',
+                        method: "POST",  
+                        headers: {  
+                            'Accept': 'application/json;odata=nometadata',
+                            'Content-Type': 'application/json;odata=nometadata',
+                            'X-RequestDigest': vaApp.model.digest,
+                            'IF-MATCH': '*',
+                            'X-HTTP-Method': 'DELETE'
+                        },  
+                        success: function (data, status, xhr) {
+                            args.success({});
+                        },
+                        error: function (xhr, status, error) {
+                            console.log(xhr, status, error);
+                            args.error({});
+                        }
+                    });
+                }
+            }
+
+            // internal utility functions
+            Utils = {
+                showMessage: (title, message) => {
+                    var displayMessage = $('#_message').data('kendoWindow');
+                    displayMessage.title(title);
+                    displayMessage.content(message);
+                    displayMessage.open();
+                },
+                getDigest: () => {
+                    $.ajax({
+                        url:  vaApp.model._siteUrl + '/_api/contextinfo',
+                        dataType: 'json',
+                        type: 'POST',
+                        async: true,
+                        headers: {
+                            'Accept': 'application/json;odata=verbose',
+                            'Content-Type': 'application/json;odata=verbose'
+                        },
+                        success: function (response) {
+                            vaApp.model.set('digest', response.d.GetContextWebInformation.FormDigestValue);
+                        },
+                        error: function (xhr) {
+                            Utils.showMessage('Error: Digest Request Failure','There was a communication error with SharePoint obtaining the request digest needed for POST operations. See the console log for more details...');
+                            console.log(xhr);
+                        }
+                    });
+                },
+                cleanseModel: (model) => {
+                    delete model['__kendo_devtools_id'];
+                    delete model['__metadata'];
+                    delete model['Created'];
+                    delete model['Modified'];
+                    delete model['metadataLastUpdated'];
+                    delete model['Editor'];
+                    delete model['value'];
+                    console.log(model);
+                    return model;
+                }
+            }
+        } (window.vaApp = window.vaApp = window.$ || {}, jQuery));
+
+        // when document ready
+        $( () => {
+            $.init();
+            $.render();
+        });
+    </script>
+</body>
+</html>
